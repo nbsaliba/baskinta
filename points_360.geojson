@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "points_360",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32636" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "Vue panoramique — entrée du site", "photo_360": "test.jpg", "photo_radius": 50, "description": "Vue à 360° depuis l'entrée principale" }, "geometry": { "type": "Point", "coordinates": [ 760070.75, 3788137.0 ] } },
+{ "type": "Feature", "properties": { "name": "Vue panoramique — centre du parcours", "photo_360": "meadow_2_4k.exr", "photo_radius": 50, "description": "Vue à 360° depuis le centre" }, "geometry": { "type": "Point", "coordinates": [ 760370.75, 3788237.0 ] } }
+]
+}

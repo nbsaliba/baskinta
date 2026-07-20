@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "poi",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32636" } },
+"features": [
+{ "type": "Feature", "properties": { "Name": "عسلاتنا", "texte": "إستكشف عالم النحل ودوره في إنتاج العسل الفاخر من زهر الزيتون، وتذوّق طعمه اللذيذ المميّز", "audio_text": "Explore the world of bees and their role in producing premium honey from olive blossoms, and savor its distinctive, delicious taste.\n" }, "geometry": { "type": "Point", "coordinates": [ 760023, 3788143 ] } },
+{ "type": "Feature", "properties": { "Name": "خوابينا", "texte": "تعرّف على طرق استخراج الزيت الفاخر المتنوّعة وأواني حفظه للمحافظة على جودته", "audio_text": "Discover the various methods of extracting premium olive oil and the containers used to store it in order to preserve its quality.\n" }, "geometry": { "type": "Point", "coordinates": [ 760280, 3788226 ] } }
+]
+}

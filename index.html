@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Circuit narratif — Prototype</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { overflow-x:hidden; max-width:100%; }
+body { background:#0a0a0f; font-family:system-ui,sans-serif; color:#fff; overflow:hidden; height:100vh; height:100dvh; max-width:100%; }
+canvas { display:block; position:absolute; top:0; left:0; width:100%; height:100%; }
+
+/* ---- Écran d'accueil ---------------------------------------------------- */
+ #welcome-screen {
+   position:fixed; inset:0; z-index:1000; display:flex; align-items:center; justify-content:center;
+   background:linear-gradient(rgba(10,15,20,0.88), rgba(10,15,20,0.92)),
+              radial-gradient(circle at 50% 20%, #2c4a3d, #0d1117 70%);
+   color:#f2ede3; padding:24px; box-sizing:border-box;
+   overflow-y:auto;
+ }
+ #welcome-card { max-width:560px; text-align:center; }
+ #welcome-card h1 {
+   font-family: Georgia, 'Times New Roman', serif; font-size:clamp(20px, 6vw, 26px); margin:0 0 18px;
+   letter-spacing:0.5px; color:#f6e7c1;
+ }
+ #welcome-card p { font-size:clamp(14px, 4vw, 15px); line-height:1.55; opacity:0.92; margin:0 0 16px; }
+ #start-btn {
+   margin-top:10px; background:#c98a3c; color:#241a0d; border:none; font-weight:bold;
+   padding:14px 30px; border-radius:30px; font-size:clamp(15px, 4.5vw, 16px); cursor:pointer;
+   box-shadow:0 4px 18px rgba(201,138,60,0.4);
+ }
+ #start-btn:active { transform:scale(0.98); }
+ #start-btn:disabled { opacity:0.5; cursor:wait; box-shadow:none; }
+ #welcome-note { font-size:clamp(11px, 3.2vw, 12px); opacity:0.6; margin-top:14px; }
+
+
+#topbar { position:absolute;top:0;left:0;right:0;padding:16px 24px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);pointer-events:none; }
+#story-title { font-size:11px;letter-spacing:.14em;color:rgba(255,210,140,.85);text-transform:uppercase;margin-bottom:4px; }
+#km-badge { position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);border:.5px solid rgba(255,210,140,.35);border-radius:20px;padding:5px 16px;font-size:12px;color:rgba(255,210,140,.9);white-space:nowrap;pointer-events:none; }
+#view-label { position:absolute;top:18px;right:24px;font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.35);text-transform:uppercase;pointer-events:none; }
+#debug { position:absolute;top:55px;right:24px;font-size:10px;color:rgba(255,255,0,.55);font-family:monospace;pointer-events:none;line-height:1.6; }
+
+#narrative-box { position:absolute; bottom:155px;left:50%;transform:translateX(-50%);width:500px;max-width:92vw;opacity:0;transition:opacity .6s;pointer-events:none; }
+#narrative-text { font-size:clamp(12.5px, 3.6vw, 14px);line-height:1.75;color:rgba(255,255,255,.95);background:rgba(0,0,0,.65);padding:14px 18px;border-radius:8px;border-left:2px solid rgba(255,210,140,.7); max-height:min(40vh, 320px); overflow-y:auto; pointer-events:auto; }
+
+#progress-wrap { position:absolute;bottom:105px;left:50%;transform:translateX(-50%);width:340px;max-width:92vw;text-align:center;pointer-events:none; }
+#progress-label { font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-bottom:7px;text-transform:uppercase; }
+#progress-track { height:2px;background:rgba(255,255,255,.12);border-radius:2px; }
+#progress-fill { height:2px;background:rgba(255,210,140,.8);border-radius:2px;width:0%; }
+#hint { position:absolute;bottom:68px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);white-space:nowrap;pointer-events:none; }
+.btn-poi-360 { background:rgba(255,200,50,.2);border:.5px solid rgba(255,200,50,.5);color:#ffc832;font-size:10px;padding:2px 6px;border-radius:8px;cursor:pointer;margin-left:4px;vertical-align:middle; }
+.btn-poi-360:hover { background:rgba(255,200,50,.4); } border-color:rgba(255,140,80,.6) !important; animation:pulse-blocked 1.6s ease-in-out infinite; }
+@keyframes pulse-blocked { 0%,100%{opacity:1;} 50%{opacity:.65;} }
+
+/* Panel SIG */
+#sig-panel { position:absolute;top:60px;left:24px;width:240px;pointer-events:all; }
+#sig-title { font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:10px; }
+.sig-btn { display:block;width:100%;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75);font-size:11px;padding:8px 12px;border-radius:8px;cursor:pointer;margin-bottom:6px;text-align:left;transition:background .15s; }
+.sig-btn:hover { background:rgba(255,255,255,.13); }
+.sig-btn input { display:none; }
+.sig-btn.loaded { border-color:rgba(100,255,140,.5);color:rgba(120,255,160,.9); }
+.sig-btn.loaded::before { content:'✓ '; }
+#sig-origin { font-size:10px;color:rgba(255,255,255,.28);margin:8px 0 3px;font-family:monospace;line-height:1.6;word-break:break-all; }
+#sig-status { font-size:11px;margin-top:5px;min-height:16px;line-height:1.6; }
+
+/* POI panel carte */
+#poi-panel { position:absolute;top:50%;right:24px;transform:translateY(-50%);width:200px;pointer-events:all;display:none; }
+#poi-panel-title { font-size:10px;letter-spacing:.12em;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:8px; }
+.poi-card { background:rgba(0,0,0,.55);border:.5px solid rgba(255,210,140,.25);border-radius:8px;padding:10px 13px;margin-bottom:8px;cursor:pointer; }
+.poi-card:hover { background:rgba(255,210,140,.1); }
+.poi-name { font-size:12px;font-weight:500;color:rgba(255,210,140,.9); }
+.poi-dist { font-size:11px;color:rgba(255,255,255,.4);margin-top:3px; }
+
+/* Popup attributs bâti */
+#attr-popup { position:absolute;pointer-events:none;background:rgba(10,8,5,.92);border:1px solid rgba(255,210,140,.35);border-radius:10px;padding:14px 16px;width:255px;opacity:0;transition:opacity .2s;backdrop-filter:blur(8px);z-index:200; }
+#attr-popup.visible { opacity:1;pointer-events:all; }
+#attr-close { position:absolute;top:8px;right:10px;cursor:pointer;color:rgba(255,255,255,.4);font-size:14px;line-height:1; }
+#attr-close:hover { color:#fff; }
+#attr-title { font-size:13px;font-weight:600;color:rgba(255,210,140,.95);margin-bottom:10px;padding-right:16px; }
+.attr-row { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px; }
+.attr-key { font-size:10px;letter-spacing:.08em;color:rgba(255,255,255,.38);text-transform:uppercase;flex-shrink:0; }
+.attr-val { font-size:12px;color:rgba(255,255,255,.85);text-align:right;word-break:break-word; }
+
+/* Écran vide (avant chargement) */
+#empty-screen { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;transition:opacity .8s; }
+#empty-screen.hidden { opacity:0; }
+#empty-icon { font-size:48px;margin-bottom:20px;opacity:.4; }
+#empty-msg { font-size:15px;color:rgba(255,255,255,.35);text-align:center;line-height:1.8; }
+
+/* Loader */
+#loader { position:absolute;inset:0;background:rgba(0,0,0,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .3s; }
+#loader.visible { opacity:1;pointer-events:all; }
+#loader-text { font-size:14px;color:rgba(255,210,140,.9);margin-top:16px;letter-spacing:.06em; }
+.spinner { width:38px;height:38px;border:3px solid rgba(255,210,140,.2);border-top-color:rgba(255,210,140,.9);border-radius:50%;animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Fin */
+#end-screen { position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 1.2s; }
+#end-screen.visible { opacity:1;pointer-events:all; }
+#end-title { font-size:28px;font-weight:500;color:rgba(255,210,140,1);margin-bottom:12px; }
+#end-sub { font-size:15px;color:rgba(255,255,255,.6);margin-bottom:30px;text-align:center; }
+#end-btn { background:rgba(255,210,140,.2);border:1px solid rgba(255,210,140,.5);color:rgba(255,210,140,1);font-size:14px;padding:12px 32px;border-radius:24px;cursor:pointer; }
+
+/* Fenêtre 360° flottante */
+#win360 {
+  position:absolute; bottom:80px; right:16px;
+  width:220px; height:130px;
+  border-radius:10px; overflow:hidden;
+  border:1.5px solid rgba(255,255,255,.25);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);
+  display:none; z-index:500;
+  transition:opacity .4s;
+  cursor:grab;
+  background:#000;
+}
+#win360.visible { display:block; }
+#win360.fullscreen {
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  border-radius:0; border:none;
+  bottom:auto; right:auto; z-index:900;
+}
+#canvas360 { width:100%; height:100%; display:block; }
+#win360-btns {
+  position:absolute; top:6px; right:6px;
+  display:flex; gap:5px;
+}
+.w360-btn {
+  background:rgba(0,0,0,.55); border:none;
+  color:#fff; font-size:13px;
+  width:26px; height:26px; border-radius:6px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  line-height:1;
+}
+.w360-btn:hover { background:rgba(255,255,255,.2); }
+#win360-label {
+  position:absolute; bottom:6px; left:8px;
+  font-size:10px; color:rgba(255,255,255,.6);
+  pointer-events:none; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:80%;
+}
+#win360-hint {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:10px; color:rgba(255,255,255,.4);
+  pointer-events:none; text-align:center;
+}
+
+/* ---- Boutons principaux (marche manuelle + podomètre) ------------------- */
+/* Mis en avant car ce sont les seuls boutons qui subsisteront à terme */
+#step-btn, #accel-btn {
+  order: -1;
+  font-weight:600;
+  transition: transform .12s ease;
+}
+#step-btn {
+  font-size:17px;
+  padding:16px 42px;
+}
+#accel-btn {
+  font-size:15px;
+  padding:14px 30px;
+}
+#step-btn:active, #accel-btn:active { transform:scale(0.96); }
+
+/* Fond sombre translucide derrière tous les boutons de la barre du bas,
+   pour rester lisible quel que soit ce qui s'affiche derrière (ciel clair,
+   neige, façade blanche...) sans changer la couleur propre de chaque bouton. */
+#controls-bar > button, #controls-bar > select {
+  backdrop-filter: blur(6px) brightness(0.6);
+  -webkit-backdrop-filter: blur(6px) brightness(0.6);
+  text-shadow: 0 1px 3px rgba(0,0,0,.7);
+}
+
+/* ---- Adaptations mobile -------------------------------------------------- */
+@media (max-width: 700px) {
+  #welcome-card { max-width:92vw; }
+
+  /* Le conteneur des boutons a un transform inline (translateX), ce qui crée
+     un nouveau "containing block" pour ses enfants en position:fixed.
+     On le neutralise ici pour que step-btn/accel-btn se positionnent
+     correctement par rapport à l'écran, et non par rapport à cette boîte. */
+  #controls-bar {
+    left:14px !important;
+    right:14px !important;
+    bottom:14px !important;
+    transform:none !important;
+    max-width:calc(100vw - 28px);
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  /* Marcher / Mode marche restent dans la barre du bas avec les autres,
+     juste un peu plus grands puisque ce seront les boutons principaux */
+  #step-btn { font-size:14px; padding:11px 22px; }
+  #accel-btn { font-size:13px; padding:10px 18px; }
+}
+</style>
+
+<script>
+window.EMBEDDED = {
+  title:        "",
+  geoOrigin:    {"e":758868.9971127503,"n":3787590.2659684005},
+  parcours:     null, pois: null, narrations: null, bati: null, os: null, mnt_b64: null, sat_b64: null,
+  mnt_url:      './mnt.tif',
+  sat_url:      './satellite.tif',
+  os_url:       './os.geojson',
+  parcours_url: './parcours.geojson',
+  pois_url:     './pois.geojson',
+  narr_url:     './narrations.geojson',
+  bati_url:     './bati.geojson',
+  audio_files:  ["Point2.mp3","Point3_V1.mp3","Point1_V1.mp3"],
+  audio_base:   './audio/',
+};
+</script>
+<script>
+// ── Loader données embarquées (s'exécute au démarrage) ──
+(async function() {
+  const E = window.EMBEDDED; if(!E) return;
+  // Attend que le DOM soit prêt
+  await new Promise(r => { if(document.readyState==='complete') r(); else window.addEventListener('load',r); });
+  // Attend que les fonctions principales soient disponibles (max 15s)
+  let tries=0;
+  while(typeof loadGeoTIFF_data !== 'function' && tries++<300) await new Promise(r=>setTimeout(r,50));
+  if(typeof loadGeoTIFF_data !== 'function') { console.error('Timeout: fonctions non disponibles'); return; }
+  console.log('Loader embarqué: fonctions disponibles, chargement des données...');
+
+  if(E.title) { document.getElementById('story-title').textContent=E.title; document.title='Walking Story — '+E.title; }
+
+  // Utilitaire : base64 → ArrayBuffer rapide
+  function b64ToBuffer(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  if(E.mnt_b64) {
+    await loadGeoTIFF_data(b64ToBuffer(E.mnt_b64), E.geoOrigin);
+  } else if(E.mnt_url) {
+    try {
+      const buf = await fetch(E.mnt_url).then(r=>r.arrayBuffer());
+      await loadGeoTIFF_data(buf, E.geoOrigin);
+    } catch(e) { console.warn('MNT non trouvé:', E.mnt_url); if(E.geoOrigin) setOrigin(E.geoOrigin.e, E.geoOrigin.n); }
+  } else if(E.geoOrigin) {
+    setOrigin(E.geoOrigin.e, E.geoOrigin.n);
+  }
+
+  const loadGJ = async (data, url, fn) => {
+    try {
+      if (data) { await fn(data); }
+      else if (url) { const g = await fetch(url).then(r=>r.json()); await fn(g); }
+    } catch(e) { console.error('Loader erreur', fn.name, e); }
+  };
+  await loadGJ(E.parcours,   E.parcours_url,   loadParcours_data);
+  await loadGJ(E.pois,       E.pois_url,       loadPOI_data);
+  await loadGJ(E.narrations, E.narr_url,       loadNarrations_data);
+  await loadGJ(E.bati,       E.bati_url,       loadBati_data);
+  await loadGJ(E.os,         E.os_url,         loadOS_data);
+
+  // Satellite
+  if (E.sat_b64) {
+    await loadSatellite_data(b64ToBuffer(E.sat_b64));
+  } else if (E.sat_url) {
+    try {
+      const buf = await fetch(E.sat_url).then(r=>r.arrayBuffer());
+      await loadSatellite_data(buf);
+    } catch(e) { console.warn('Satellite non trouvé:', E.sat_url); }
+  }
+
+  // Audio depuis base64 (mode autonome)
+  if (E.audio_b64 && Object.keys(E.audio_b64).length > 0) {
+    for (const [name, b64] of Object.entries(E.audio_b64)) {
+      try {
+        const ext = name.split('.').pop().toLowerCase();
+        const mimeMap = {mp3:'audio/mpeg', wav:'audio/wav', ogg:'audio/ogg', m4a:'audio/mp4'};
+        const blob = new Blob([b64ToBuffer(b64)], {type: mimeMap[ext]||'audio/mpeg'});
+        const url  = URL.createObjectURL(blob);
+        audioBlobs[name] = url;
+        narrPoints.forEach(n => {
+          if (n.audio_file && matchAudioFile(n.audio_file, name)) n.audioBlobURL = url;
+        });
+      } catch(e) { console.warn('Erreur audio b64:', name, e); }
+    }
+  }
+
+  // Audio depuis URLs (mode relatif/distant) — utilise directement l'URL sans vérification HEAD
+  if (E.audio_files && E.audio_files.length > 0 && E.audio_base) {
+    console.log('Audio files à associer:', E.audio_files);
+    console.log('narrPoints audio_file:', narrPoints.map(n=>n.audio_file));
+    for (const name of E.audio_files) {
+      const url = E.audio_base + name;
+      audioBlobs[name] = url;
+      narrPoints.forEach(n => {
+        if (n.audio_file && matchAudioFile(n.audio_file, name)) {
+          n.audioBlobURL = url;
+          console.log('Audio associé:', name, '→', n.name);
+        }
+      });
+    }
+    console.log('Points avec audio:', narrPoints.filter(n=>n.audioBlobURL).length, '/', narrPoints.length);
+  }
+
+  // Révèle la scène même si pas de MNT
+  if (!altGrid) { revealSky(); dismissEmpty(); }
+})();
+</script>
+</head>
+<body>
+
+
+
+<div id="welcome-screen">
+  <div id="welcome-card">
+    <h1>Bienvenue sur le Lebanon Mountain Trail</h1>
+    <p>Tu vas pouvoir découvrir le Liban à travers des récits qui s'élèvent au rythme de tes pas. Chaque passage montagneux raconte une histoire, chaque sommet offre une perspective unique.</p>
+    <p>Je te propose de commencer par le sentier littéraire de Baskinta, où les mots se mêlent aux rochers et les souvenirs s'empreignent de la lumière des montagnes. C'est ici que commence ton voyage à travers les mémoires du Liban.</p>
+    <p><strong>Prêt à partir ?</strong></p>
+    <button id="start-btn" disabled>Chargement…</button>
+    <!--<button id="start-btn">Démarrer</button>-->
+    <div id="welcome-note">Utilise le mode "podomètre" ou le mode "Manuel" pour avancer sur le sentier</div>
+  </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+
+<div id="topbar">
+  <div id="story-title">Sentier littéraire de Baskinta</div>
+</div>
+<div id="km-badge">0.143 km parcouru</div>
+<div id="view-label">Vue FPS</div>
+<div id="debug">t:10.3% | alt:1178m
+scène:(1262.9, -546.2)
+UTM E:760132 N:3788137
+terrain X[0..2550] Z[-1390..0]</div>
+<div id="narrative-box" style="opacity: 0;"><div id="narrative-text">The Legend of Noha's</div></div>
+<div id="progress-wrap">
+  <div id="progress-label">Progression</div>
+  <div id="progress-track"><div id="progress-fill" style="width: 10.3%;"></div></div>
+</div>
+<div id="hint">ESPACE ou bouton Marcher · Clic bâtiment = attributs · Échap = fermer</div>
+
+<!-- Écran d'accueil vide -->
+<div id="empty-screen" class="hidden" style="display: none;">
+  <div id="empty-icon">🗺️</div>
+  <div id="empty-msg">Chargez vos données SIG pour commencer<br><span style="font-size:12px;color:rgba(255,255,255,.22)">MNT en premier pour fixer le référentiel UTM</span></div>
+</div>
+
+<div id="poi-panel"><div id="poi-panel-title">Points d'intérêt</div></div>
+
+<div id="attr-popup">
+  <div id="attr-close" onclick="closeAttr()">✕</div>
+  <div id="attr-title">—</div>
+  <div id="attr-body"></div>
+</div>
+
+<div id="loader" class=""><div class="spinner"></div><div id="loader-text">Lecture GeoTIFF satellite…</div></div>
+
+<div id="end-screen">
+  <div id="end-title">Parcours terminé</div>
+  <div id="end-sub">Vous avez atteint la fin du tracé.</div>
+  <button id="end-btn" onclick="resetJourney()">↩ Recommencer</button>
+</div>
+
+<!-- Contrôles -->
+<div id="controls-bar" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;z-index:999;">
+  <button id="btn-fps" onclick="setView('fps')" style="background:rgba(255,210,140,.2);border:.5px solid rgba(255,210,140,.55);color:rgba(255,210,140,1);font-size:12px;padding:8px 18px;border-radius:20px;cursor:pointer;">Vue FPS</button>
+  <button id="btn-aerial" onclick="setView('aerial')" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:12px;padding:8px 18px;border-radius:20px;cursor:pointer;">Vue aérienne</button>
+  <button id="btn-map" onclick="setView('map')" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:12px;padding:8px 18px;border-radius:20px;cursor:pointer;">Carte</button>
+  <button id="mute-btn" onclick="toggleMute()" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:12px;padding:8px 14px;border-radius:20px;cursor:pointer;">🔊 Son</button>
+  <select id="voice-select" onchange="setVoiceFromSelect(this.value)" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;padding:7px 10px;border-radius:20px;cursor:pointer;max-width:140px;" data-populated="1">
+    <option value="">Voix : auto</option>
+  <option value="Microsoft Hortense - French (France)">Hortense - French (France)</option><option value="Microsoft Julie - French (France)">Julie - French (France)</option><option value="Microsoft Paul - French (France)">Paul - French (France)</option><option value="Microsoft Hortense Desktop - French">Hortense Desktop - French</option></select>
+  <button id="step-btn" onmousedown="startWalking()" onmouseup="stopWalking()" onmouseleave="stopWalking()" ontouchstart="startWalking()" ontouchend="stopWalking()" style="background: rgba(255, 210, 140, 0.15); border: 1px solid rgba(255, 210, 140, 0.55); color: rgb(255, 210, 140); border-radius: 24px; cursor: pointer; user-select: none;" class="">▶ Marcher</button>
+  <button id="accel-btn" onclick="toggleAccelMode()" style="display:none;background:rgba(120,200,255,.15);border:1px solid rgba(120,200,255,.55);color:rgba(140,210,255,1);border-radius:24px;cursor:pointer;" title="Avancer en marchant réellement avec le téléphone">
+    📱 Mode marche
+  </button>
+  <button id="btn-show360" onclick="showNearest360()" style="display: block; background: rgba(255, 200, 50, 0.15); border: 1px solid rgba(255, 200, 50, 0.5); color: rgb(255, 210, 80); font-size: 12px; padding: 8px 14px; border-radius: 20px; cursor: pointer;" title="📷 Vue panoramique — entrée du site">📷 360°</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/EXRLoader.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/core.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/bati.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/map.js"></script>
+<script src="js/sig_loaders.js"></script>
+<script src="js/os.js"></script>
+<script src="js/satellite.js"></script>
+<script src="js/narration.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/animate.js"></script>
+<script src="js/viewer360.js"></script>
+<script src="js/mobile.js"></script>
+<script src="js/data_embedded.js"></script>
+<script src="js/data_loaders.js"></script>
+
+<script>
+const btn = document.getElementById("start-btn");
+
+btn.disabled = false;      // réactive le bouton
+btn.textContent = "Démarrer"; // change le texte
+</script>
+
+<script>
+document.getElementById("start-btn").addEventListener("click", () => {
+
+    document.getElementById("welcome-screen").style.display = "none";
+
+});
+</script>
+
+</body></html>
